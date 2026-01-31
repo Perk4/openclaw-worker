@@ -230,6 +230,12 @@ if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_APP_TOKEN) {
 const baseUrl = (process.env.AI_GATEWAY_BASE_URL || process.env.ANTHROPIC_BASE_URL || '').replace(/\/+$/, '');
 const isOpenAI = baseUrl.endsWith('/openai');
 
+const headers = {};
+
+if(process.env.AI_GATEWAY_API_KEY) {
+    headers['cf-aig-authorization'] = 'Bearer ' + process.env.AI_GATEWAY_API_KEY;
+}
+
 if (isOpenAI) {
     // Create custom openai provider config with baseUrl override
     // Omit apiKey so moltbot falls back to OPENAI_API_KEY env var
@@ -239,6 +245,7 @@ if (isOpenAI) {
     config.models.providers.openai = {
         baseUrl: baseUrl,
         api: 'openai-responses',
+        headers,
         models: [
             { id: 'gpt-5.2', name: 'GPT-5.2', contextWindow: 200000 },
             { id: 'gpt-5', name: 'GPT-5', contextWindow: 200000 },
@@ -258,6 +265,7 @@ if (isOpenAI) {
     const providerConfig = {
         baseUrl: baseUrl,
         api: 'anthropic-messages',
+        headers,
         models: [
             { id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5', contextWindow: 200000 },
             { id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5', contextWindow: 200000 },
@@ -267,6 +275,9 @@ if (isOpenAI) {
     // Include API key in provider config if set (required when using custom baseUrl)
     if (process.env.ANTHROPIC_API_KEY) {
         providerConfig.apiKey = process.env.ANTHROPIC_API_KEY;
+    } else if (process.env.ANTHROPIC_OAUTH_TOKEN) {
+        providerConfig.auth = "token";
+        providerConfig.apiKey = process.env.ANTHROPIC_OAUTH_TOKEN;
     }
     config.models.providers.anthropic = providerConfig;
     // Add models to the allowlist so they appear in /models
