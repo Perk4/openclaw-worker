@@ -54,6 +54,13 @@ export interface MoltbotEnv {
   // Git workspace sync (for identity files from GitHub)
   GITHUB_PAT?: string; // GitHub Personal Access Token
   GITHUB_REPO?: string; // Repo in format "owner/repo"
+  
+  // Skill-specific secrets (passthrough to container)
+  AGENTMAIL_API_KEY?: string; // AgentMail API key for email skill
+  GOG_KEYRING_PASSWORD?: string; // Keyring password for gog (Google Workspace) skill
+  GOOGLE_API_KEY?: string; // Google API key for Gemini skill
+  ELEVENLABS_API_KEY?: string; // ElevenLabs API key for TTS skill
+  BRAVE_API_KEY?: string; // Brave Search API key
 }
 
 /**

@@ -71,6 +71,13 @@ export function buildEnvVars(env: MoltbotEnv): Record<string, string> {
   // Git workspace sync (for identity files from GitHub)
   if (env.GITHUB_PAT) envVars.GITHUB_PAT = env.GITHUB_PAT;
   if (env.GITHUB_REPO) envVars.GITHUB_REPO = env.GITHUB_REPO;
+  
+  // Skill-specific secrets (passthrough to container)
+  if (env.AGENTMAIL_API_KEY) envVars.AGENTMAIL_API_KEY = env.AGENTMAIL_API_KEY;
+  if (env.GOG_KEYRING_PASSWORD) envVars.GOG_KEYRING_PASSWORD = env.GOG_KEYRING_PASSWORD;
+  if (env.GOOGLE_API_KEY) envVars.GOOGLE_API_KEY = env.GOOGLE_API_KEY;
+  if (env.ELEVENLABS_API_KEY) envVars.ELEVENLABS_API_KEY = env.ELEVENLABS_API_KEY;
+  if (env.BRAVE_API_KEY) envVars.BRAVE_API_KEY = env.BRAVE_API_KEY;
 
   return envVars;
 }
