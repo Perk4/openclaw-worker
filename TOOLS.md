@@ -1,36 +1,21 @@
 # TOOLS.md - Local Notes
 
-Skills define *how* tools work. This file is for *your* specifics — the stuff that's unique to your setup.
+## Git
 
-## What Goes Here
+- **Repo:** `Perk4/openclaw-worker` (GitHub)
+- **Auth:** PAT in remote URL + `gh` CLI logged in as Perk4
+- **Branch:** `main`
+- **Commit policy:** Push on significant changes only (not heartbeats). Significant = identity updates, new user info, important memories, config changes.
 
-Things like:
-- Camera names and locations
-- SSH hosts and aliases  
-- Preferred voices for TTS
-- Speaker/room names
-- Device nicknames
-- Anything environment-specific
+## Cloudflare
 
-## Examples
+- **API Token:** Set in secrets (check env for `CLOUDFLARE_API_TOKEN`)
+- **Deployment:** openclaw-worker (Cloudchamber)
+- **Wrangler:** Check if available for deployments/KV/R2 access
 
-```markdown
-### Cameras
-- living-room → Main area, 180° wide angle
-- front-door → Entrance, motion-triggered
+## Not Yet Configured
 
-### SSH
-- home-server → 192.168.1.100, user: admin
-
-### TTS
-- Preferred voice: "Nova" (warm, slightly British)
-- Default speaker: Kitchen HomePod
-```
-
-## Why Separate?
-
-Skills are shared. Your setup is yours. Keeping them apart means you can update skills without losing your notes, and share skills without leaking your infrastructure.
-
----
-
-Add whatever helps you do your job. This is your cheat sheet.
+- Cameras
+- SSH hosts
+- TTS voices
+- Home automation
