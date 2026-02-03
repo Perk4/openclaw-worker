@@ -67,7 +67,7 @@
   "kv_namespaces": [
     {
       "binding": "BROWSER_KV",
-      "id": "REPLACE_WITH_KV_ID",
+      "id": "c82eff0170a24a53ae03b21dd768f52e",
     },
   ],
   // Workers AI binding for Stagehand
