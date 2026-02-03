@@ -1,6 +1,47 @@
 import type { MoltbotEnv } from '../types';
 
 /**
+ * Prefixes for dynamic secret passthrough.
+ * Secrets with these prefixes are automatically forwarded to the container
+ * without requiring code changes. Add new secrets via Cloudflare dashboard
+ * with one of these prefixes.
+ * 
+ * Examples:
+ *   - SKILL_NOTION_API_KEY
+ *   - SKILL_AIRTABLE_TOKEN
+ *   - API_SOME_SERVICE_KEY
+ */
+const DYNAMIC_SECRET_PREFIXES = [
+  'SKILL_',      // Generic skill secrets (recommended)
+  'API_',        // Third-party API keys
+];
+
+/**
+ * Blocklist of environment variable patterns that should NEVER be forwarded,
+ * even if they match a dynamic prefix. Security-sensitive system vars.
+ */
+const PASSTHROUGH_BLOCKLIST = [
+  'CF_ACCESS_',
+  'R2_SECRET_',
+  'MOLTBOT_BUCKET',
+  'BROWSER_KV',
+];
+
+/**
+ * Check if a key matches any blocklist pattern
+ */
+function isBlocklisted(key: string): boolean {
+  return PASSTHROUGH_BLOCKLIST.some(pattern => key.startsWith(pattern));
+}
+
+/**
+ * Check if a key matches any dynamic passthrough prefix
+ */
+function isDynamicSecret(key: string): boolean {
+  return DYNAMIC_SECRET_PREFIXES.some(prefix => key.startsWith(prefix));
+}
+
+/**
  * Build environment variables to pass to the Moltbot container process
  * 
  * @param env - Worker environment bindings
@@ -50,6 +91,7 @@ export function buildEnvVars(env: MoltbotEnv): Record<string, string> {
   } else if (env.ANTHROPIC_BASE_URL) {
     envVars.ANTHROPIC_BASE_URL = env.ANTHROPIC_BASE_URL;
   }
+  
   // Map Worker env vars to OPENCLAW_* for container
   if (env.MOLTBOT_GATEWAY_TOKEN) envVars.OPENCLAW_GATEWAY_TOKEN = env.MOLTBOT_GATEWAY_TOKEN;
   if (env.DEV_MODE) envVars.OPENCLAW_DEV_MODE = env.DEV_MODE;
@@ -72,12 +114,34 @@ export function buildEnvVars(env: MoltbotEnv): Record<string, string> {
   if (env.GITHUB_PAT) envVars.GITHUB_PAT = env.GITHUB_PAT;
   if (env.GITHUB_REPO) envVars.GITHUB_REPO = env.GITHUB_REPO;
   
-  // Skill-specific secrets (passthrough to container)
+  // Explicit skill-specific secrets (type-safe, for commonly used skills)
   if (env.AGENTMAIL_API_KEY) envVars.AGENTMAIL_API_KEY = env.AGENTMAIL_API_KEY;
   if (env.GOG_KEYRING_PASSWORD) envVars.GOG_KEYRING_PASSWORD = env.GOG_KEYRING_PASSWORD;
   if (env.GOOGLE_API_KEY) envVars.GOOGLE_API_KEY = env.GOOGLE_API_KEY;
   if (env.ELEVENLABS_API_KEY) envVars.ELEVENLABS_API_KEY = env.ELEVENLABS_API_KEY;
   if (env.BRAVE_API_KEY) envVars.BRAVE_API_KEY = env.BRAVE_API_KEY;
 
+  // Dynamic secret passthrough: forward any secret matching approved prefixes
+  // This allows adding new skill secrets without code changes
+  // Just add the secret in Cloudflare dashboard with SKILL_ or API_ prefix
+  for (const [key, value] of Object.entries(env)) {
+    // Skip if already set (explicit secrets take precedence)
+    if (envVars[key]) continue;
+    
+    // Skip non-string values (bindings, objects, etc.)
+    if (typeof value !== 'string') continue;
+    
+    // Skip blocklisted patterns
+    if (isBlocklisted(key)) continue;
+    
+    // Forward if matches dynamic prefix
+    if (isDynamicSecret(key)) {
+      envVars[key] = value;
+    }
+  }
+
   return envVars;
 }
+
+// Export for testing
+export { DYNAMIC_SECRET_PREFIXES, PASSTHROUGH_BLOCKLIST, isDynamicSecret, isBlocklisted };

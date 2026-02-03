@@ -55,12 +55,21 @@ export interface MoltbotEnv {
   GITHUB_PAT?: string; // GitHub Personal Access Token
   GITHUB_REPO?: string; // Repo in format "owner/repo"
   
-  // Skill-specific secrets (passthrough to container)
+  // Skill-specific secrets (explicit, type-safe)
   AGENTMAIL_API_KEY?: string; // AgentMail API key for email skill
   GOG_KEYRING_PASSWORD?: string; // Keyring password for gog (Google Workspace) skill
   GOOGLE_API_KEY?: string; // Google API key for Gemini skill
   ELEVENLABS_API_KEY?: string; // ElevenLabs API key for TTS skill
   BRAVE_API_KEY?: string; // Brave Search API key
+  
+  // Dynamic skill secrets (no code changes needed)
+  // Add secrets with these prefixes in Cloudflare dashboard:
+  //   - SKILL_* (recommended for skill-specific secrets)
+  //   - API_* (for third-party API keys)
+  // They will be automatically forwarded to the container.
+  // Example: SKILL_NOTION_API_KEY, API_AIRTABLE_TOKEN
+  [key: `SKILL_${string}`]: string | undefined;
+  [key: `API_${string}`]: string | undefined;
 }
 
 /**
