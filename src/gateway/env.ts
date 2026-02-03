@@ -67,6 +67,10 @@ export function buildEnvVars(env: MoltbotEnv): Record<string, string> {
   if (env.CLOUDFLARE_API_TOKEN) envVars.CLOUDFLARE_API_TOKEN = env.CLOUDFLARE_API_TOKEN;
   if (env.CLOUDFLARE_ACCOUNT_ID) envVars.CLOUDFLARE_ACCOUNT_ID = env.CLOUDFLARE_ACCOUNT_ID;
   if (env.CF_ACCOUNT_ID) envVars.CF_ACCOUNT_ID = env.CF_ACCOUNT_ID;
+  
+  // Git workspace sync (for identity files from GitHub)
+  if (env.GITHUB_PAT) envVars.GITHUB_PAT = env.GITHUB_PAT;
+  if (env.GITHUB_REPO) envVars.GITHUB_REPO = env.GITHUB_REPO;
 
   return envVars;
 }

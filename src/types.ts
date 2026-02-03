@@ -50,6 +50,10 @@ export interface MoltbotEnv {
   // Cloudflare API access (for wrangler CLI in container)
   CLOUDFLARE_API_TOKEN?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
+  
+  // Git workspace sync (for identity files from GitHub)
+  GITHUB_PAT?: string; // GitHub Personal Access Token
+  GITHUB_REPO?: string; // Repo in format "owner/repo"
 }
 
 /**

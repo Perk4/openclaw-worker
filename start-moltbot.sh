@@ -146,6 +146,68 @@ else
 fi
 
 # ============================================================
+# SYNC IDENTITY FILES FROM GIT
+# ============================================================
+# Identity files (AGENTS.md, SOUL.md, etc.) are managed in git
+# Runtime state (memory/, sessions) stays in R2
+# This ensures workspace identity is version-controlled while state persists
+
+WORKSPACE_DIR="/root/clawd"
+
+if [ -n "$GITHUB_PAT" ] && [ -n "$GITHUB_REPO" ]; then
+    echo "Syncing identity files from git..."
+    
+    # Files that git owns (identity/config)
+    GIT_OWNED_FILES="AGENTS.md SOUL.md IDENTITY.md USER.md TOOLS.md HEARTBEAT.md"
+    
+    cd "$WORKSPACE_DIR"
+    
+    # Configure git
+    git config user.email "portal@openclaw.ai" 2>/dev/null || true
+    git config user.name "Portal" 2>/dev/null || true
+    
+    # Set up remote with PAT (safe: PAT only in memory, not written to disk)
+    REPO_URL="https://${GITHUB_PAT}@github.com/${GITHUB_REPO}.git"
+    
+    # Check if this is a git repo
+    if [ -d ".git" ]; then
+        # Update remote URL (in case PAT changed)
+        git remote set-url origin "$REPO_URL" 2>/dev/null || git remote add origin "$REPO_URL" 2>/dev/null || true
+    else
+        # Initialize and connect to remote
+        git init -q
+        git remote add origin "$REPO_URL" 2>/dev/null || true
+    fi
+    
+    # Fetch and pull identity files only
+    if git fetch origin main --depth=1 2>/dev/null; then
+        # Checkout only the git-owned files from origin/main
+        for file in $GIT_OWNED_FILES; do
+            if git show origin/main:"$file" > /dev/null 2>&1; then
+                git checkout origin/main -- "$file" 2>/dev/null && echo "  Synced $file from git" || true
+            fi
+        done
+        
+        # Also sync skills directory if it exists in git
+        if git show origin/main:skills > /dev/null 2>&1; then
+            git checkout origin/main -- skills 2>/dev/null && echo "  Synced skills/ from git" || true
+        fi
+        
+        # Set up tracking branch for future commits
+        git branch -M main 2>/dev/null || true
+        git branch --set-upstream-to=origin/main main 2>/dev/null || true
+        
+        echo "Git sync complete"
+    else
+        echo "Git fetch failed (network issue?), continuing with R2 state"
+    fi
+    
+    cd - > /dev/null
+else
+    echo "GITHUB_PAT/GITHUB_REPO not set, skipping git sync"
+fi
+
+# ============================================================
 # UPDATE CONFIG FROM ENVIRONMENT VARIABLES
 # ============================================================
 node << EOFNODE
