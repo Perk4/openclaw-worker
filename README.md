@@ -268,9 +268,15 @@ npx wrangler secret put SLACK_APP_TOKEN
 npm run deploy
 ```
 
-## Optional: Browser Automation (CDP)
+## Browser Automation
 
-This worker includes a Chrome DevTools Protocol (CDP) shim that enables browser automation capabilities. This allows OpenClaw to control a headless browser for tasks like web scraping, screenshots, and automated testing.
+This worker includes comprehensive browser automation powered by [Cloudflare Browser Rendering](https://developers.cloudflare.com/browser-rendering/). Three approaches are available:
+
+| Approach | Use Case | Description |
+|----------|----------|-------------|
+| **Playwright** | Direct automation | Full browser control with auth state persistence |
+| **Playwright MCP** | LLM control | Let Claude control the browser via MCP |
+| **Stagehand** | AI-powered flows | Resilient automation using natural language |
 
 ### Setup
 
@@ -278,14 +284,14 @@ This worker includes a Chrome DevTools Protocol (CDP) shim that enables browser 
 
 ```bash
 npx wrangler secret put CDP_SECRET
-# Enter a secure random string
+# Enter a secure random string (e.g., openssl rand -hex 32)
 ```
 
-2. Set your worker's public URL:
+2. Create a KV namespace for auth state persistence:
 
 ```bash
-npx wrangler secret put WORKER_URL
-# Enter: https://your-worker.workers.dev
+npx wrangler kv namespace create BROWSER_KV
+# Copy the ID and update wrangler.jsonc
 ```
 
 3. Redeploy:
@@ -294,16 +300,82 @@ npx wrangler secret put WORKER_URL
 npm run deploy
 ```
 
-### Endpoints
+### Playwright Endpoints (`/browser/*`)
+
+Modern browser automation with persistent auth state:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/browser` | GET | API documentation |
+| `/browser/sessions` | GET | List active browser sessions |
+| `/browser/screenshot` | POST | Take a screenshot (with optional auth state) |
+| `/browser/content` | POST | Get rendered HTML content |
+| `/browser/storage` | GET | List stored auth states |
+| `/browser/storage/:key` | GET/PUT/DELETE | Manage specific auth state |
+| `/browser/stagehand` | POST | AI-powered browser automation |
+| `/browser/login` | POST | Convenience endpoint for login flows |
+
+All endpoints require `?secret=<CDP_SECRET>` query parameter.
+
+**Example: Screenshot with stored auth**
+```bash
+curl -X POST 'https://your-worker.workers.dev/browser/screenshot?secret=YOUR_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://example.com/dashboard",
+    "useStoredAuth": true,
+    "authKey": "example-site"
+  }' --output screenshot.png
+```
+
+**Example: Stagehand AI automation**
+```bash
+curl -X POST 'https://your-worker.workers.dev/browser/stagehand?secret=YOUR_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://example.com/login",
+    "actions": [
+      "Enter \"user@example.com\" in the email field",
+      "Enter \"password123\" in the password field",
+      "Click the login button"
+    ],
+    "saveAuth": true,
+    "authKey": "example-site",
+    "screenshot": true
+  }'
+```
+
+### Playwright MCP (`/mcp`, `/sse`)
+
+Expose browser control to LLMs via [Model Context Protocol](https://developers.cloudflare.com/browser-rendering/playwright/playwright-mcp/):
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /mcp` | MCP endpoint info |
+| `POST /mcp` | Streamable HTTP transport |
+| `GET /sse` | SSE transport connection |
+| `POST /sse/message` | SSE message endpoint |
+
+**Connect from Claude Desktop:**
+```json
+{
+  "mcpServers": {
+    "openclaw-browser": {
+      "url": "https://your-worker.workers.dev/sse?secret=YOUR_SECRET"
+    }
+  }
+}
+```
+
+### Legacy CDP Endpoints (`/cdp/*`)
+
+> ⚠️ **Deprecated**: Use `/browser/*` endpoints instead. The CDP shim is maintained for backwards compatibility.
 
 | Endpoint | Description |
 |----------|-------------|
 | `GET /cdp/json/version` | Browser version information |
 | `GET /cdp/json/list` | List available browser targets |
-| `GET /cdp/json/new` | Create a new browser target |
-| `WS /cdp/devtools/browser/{id}` | WebSocket connection for CDP commands |
-
-All endpoints require the `CDP_SECRET` header for authentication.
+| `WS /cdp?secret=...` | WebSocket connection for CDP commands |
 
 ## Built-in Skills
 
@@ -311,7 +383,7 @@ The container includes pre-installed skills in `/root/clawd/skills/`:
 
 ### cloudflare-browser
 
-Browser automation via the CDP shim. Requires `CDP_SECRET` and `WORKER_URL` to be set (see [Browser Automation](#optional-browser-automation-cdp) above).
+Browser automation skill. Requires `CDP_SECRET` to be set.
 
 **Scripts:**
 - `screenshot.js` - Capture a screenshot of a URL
@@ -321,10 +393,8 @@ Browser automation via the CDP shim. Requires `CDP_SECRET` and `WORKER_URL` to b
 **Usage:**
 ```bash
 # Screenshot
-node /root/clawd/skills/cloudflare-browser/scripts/screenshot.js https://example.com output.png
-
-# Video from multiple URLs
-node /root/clawd/skills/cloudflare-browser/scripts/video.js "https://site1.com,https://site2.com" output.mp4 --scroll
+CDP_SECRET=xxx WORKER_URL=https://your-worker.workers.dev \
+  node /root/clawd/skills/cloudflare-browser/scripts/screenshot.js https://example.com output.png
 ```
 
 See `skills/cloudflare-browser/SKILL.md` for full documentation.

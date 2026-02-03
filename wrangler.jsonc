@@ -47,6 +47,10 @@
         "class_name": "Sandbox",
         "name": "Sandbox",
       },
+      {
+        "class_name": "PlaywrightMCP",
+        "name": "MCP_OBJECT",
+      },
     ],
   },
   "migrations": [
@@ -54,7 +58,22 @@
       "new_sqlite_classes": ["Sandbox"],
       "tag": "v1",
     },
+    {
+      "new_sqlite_classes": ["PlaywrightMCP"],
+      "tag": "v2",
+    },
   ],
+  // KV namespace for browser auth state persistence
+  "kv_namespaces": [
+    {
+      "binding": "BROWSER_KV",
+      "id": "REPLACE_WITH_KV_ID",
+    },
+  ],
+  // Workers AI binding for Stagehand
+  "ai": {
+    "binding": "AI",
+  },
   // R2 bucket for persistent storage (moltbot data, conversations, etc.)
   "r2_buckets": [
     {
@@ -69,6 +88,10 @@
   // Browser Rendering binding for CDP shim
   "browser": {
     "binding": "BROWSER",
+  },
+  // Module alias to ensure Stagehand uses Cloudflare's Playwright fork
+  "alias": {
+    "playwright": "@cloudflare/playwright",
   },
   // Non-secret env vars (keep in sync with Dashboard Variables; secrets use Dashboard or .dev.vars)
   "vars": {

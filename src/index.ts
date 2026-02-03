@@ -27,7 +27,8 @@ import type { AppEnv, MoltbotEnv } from './types';
 import { MOLTBOT_PORT } from './config';
 import { createAccessMiddleware } from './auth';
 import { ensureMoltbotGateway, findExistingMoltbotProcess, syncToR2 } from './gateway';
-import { publicRoutes, api, adminUi, debug, cdp } from './routes';
+import { publicRoutes, api, adminUi, debug, cdp, browser, mcp } from './routes';
+import { PlaywrightMCP } from './mcp-object';
 import loadingPageHtml from './assets/loading.html';
 import configErrorHtml from './assets/config-error.html';
 
@@ -47,6 +48,7 @@ function transformErrorMessage(message: string, host: string): string {
 }
 
 export { Sandbox };
+export { PlaywrightMCP };
 
 /**
  * Validate required environment variables.
@@ -138,7 +140,15 @@ app.use('*', async (c, next) => {
 app.route('/', publicRoutes);
 
 // Mount CDP routes (uses shared secret auth via query param, not CF Access)
+// NOTE: CDP routes are deprecated - use /browser/* instead
 app.route('/cdp', cdp);
+
+// Mount new browser automation routes (Playwright-based, replaces CDP)
+app.route('/browser', browser);
+
+// Mount Playwright MCP routes (for LLM browser control)
+app.route('/mcp', mcp);
+app.route('/sse', mcp); // SSE transport alias
 
 // =============================================================================
 // PROTECTED ROUTES: Cloudflare Access authentication required
