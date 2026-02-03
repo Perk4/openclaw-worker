@@ -120,6 +120,17 @@ if [ -d "$BACKUP_DIR/skills" ] && [ "$(ls -A $BACKUP_DIR/skills 2>/dev/null)" ];
     fi
 fi
 
+# Restore ~/.config/ (tool credentials: gog, gh, etc.) from R2 backup
+DOTCONFIG_DIR="/root/.config"
+if [ -d "$BACKUP_DIR/dotconfig" ] && [ "$(ls -A $BACKUP_DIR/dotconfig 2>/dev/null)" ]; then
+    if should_restore_from_r2; then
+        echo "Restoring tool credentials from $BACKUP_DIR/dotconfig..."
+        mkdir -p "$DOTCONFIG_DIR"
+        cp -a "$BACKUP_DIR/dotconfig/." "$DOTCONFIG_DIR/"
+        echo "Restored ~/.config from R2 backup (gog, gh, etc.)"
+    fi
+fi
+
 # If config file still doesn't exist, create from template
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "No existing config found, initializing from template..."
