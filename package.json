@@ -17,8 +17,8 @@
   },
   "dependencies": {
     "@browserbasehq/stagehand": "^2.0.0",
-    "@cloudflare/playwright": "^1.51.0",
-    "@cloudflare/playwright-mcp": "^0.0.7",
+    "@cloudflare/playwright": "^1.1.0",
+    "@cloudflare/playwright-mcp": "^0.0.5",
     "@cloudflare/puppeteer": "^1.0.5",
     "hono": "^4.11.6",
     "jose": "^6.0.0",
