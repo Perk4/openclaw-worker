@@ -17,6 +17,23 @@ const DYNAMIC_SECRET_PREFIXES = [
 ];
 
 /**
+ * Suffixes for dynamic secret passthrough.
+ * Secrets ending with these suffixes are automatically forwarded.
+ * Catches common patterns like DISCORD_TOKEN, SOME_SERVICE_API_KEY, etc.
+ * 
+ * Examples:
+ *   - DISCORD_TOKEN
+ *   - DISCORD_BOT_TOKEN
+ *   - LINEAR_API_KEY
+ *   - NOTION_API
+ */
+const DYNAMIC_SECRET_SUFFIXES = [
+  '_TOKEN',      // Auth tokens (DISCORD_TOKEN, SLACK_BOT_TOKEN, etc.)
+  '_API_KEY',    // API keys (OPENAI_API_KEY, LINEAR_API_KEY, etc.)
+  '_API',        // API identifiers (NOTION_API, etc.)
+];
+
+/**
  * Blocklist of environment variable patterns that should NEVER be forwarded,
  * even if they match a dynamic prefix. Security-sensitive system vars.
  */
@@ -37,8 +54,22 @@ function isBlocklisted(key: string): boolean {
 /**
  * Check if a key matches any dynamic passthrough prefix
  */
-function isDynamicSecret(key: string): boolean {
+function hasDynamicPrefix(key: string): boolean {
   return DYNAMIC_SECRET_PREFIXES.some(prefix => key.startsWith(prefix));
+}
+
+/**
+ * Check if a key matches any dynamic passthrough suffix
+ */
+function hasDynamicSuffix(key: string): boolean {
+  return DYNAMIC_SECRET_SUFFIXES.some(suffix => key.endsWith(suffix));
+}
+
+/**
+ * Check if a key should be dynamically passed through (prefix OR suffix match)
+ */
+function isDynamicSecret(key: string): boolean {
+  return hasDynamicPrefix(key) || hasDynamicSuffix(key);
 }
 
 /**
@@ -144,4 +175,4 @@ export function buildEnvVars(env: MoltbotEnv): Record<string, string> {
 }
 
 // Export for testing
-export { DYNAMIC_SECRET_PREFIXES, PASSTHROUGH_BLOCKLIST, isDynamicSecret, isBlocklisted };
+export { DYNAMIC_SECRET_PREFIXES, DYNAMIC_SECRET_SUFFIXES, PASSTHROUGH_BLOCKLIST, isDynamicSecret, isBlocklisted, hasDynamicPrefix, hasDynamicSuffix };

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildEnvVars, isDynamicSecret, isBlocklisted, DYNAMIC_SECRET_PREFIXES, PASSTHROUGH_BLOCKLIST } from './env';
+import { buildEnvVars, isDynamicSecret, isBlocklisted, hasDynamicPrefix, hasDynamicSuffix, DYNAMIC_SECRET_PREFIXES, DYNAMIC_SECRET_SUFFIXES, PASSTHROUGH_BLOCKLIST } from './env';
 import { createMockEnv } from '../test-utils';
 
 describe('buildEnvVars', () => {
@@ -105,9 +105,12 @@ describe('buildEnvVars', () => {
     });
     const result = buildEnvVars(env);
     
+    // MOLTBOT_GATEWAY_TOKEN is mapped to OPENCLAW_GATEWAY_TOKEN explicitly
+    // AND passes through via _TOKEN suffix match
     expect(result).toEqual({
       ANTHROPIC_API_KEY: 'sk-key',
       OPENCLAW_GATEWAY_TOKEN: 'token',
+      MOLTBOT_GATEWAY_TOKEN: 'token',
       TELEGRAM_BOT_TOKEN: 'tg',
     });
   });
@@ -169,14 +172,22 @@ describe('buildEnvVars', () => {
       expect(result.API_ANOTHER_KEY).toBe('another-key');
     });
 
-    it('does not forward non-prefixed secrets', () => {
+    it('does not forward secrets without matching prefix or suffix', () => {
       const env = createMockEnv({
         RANDOM_SECRET: 'should-not-pass',
-        MY_API_KEY: 'also-no',
+        SOME_CONFIG_VALUE: 'also-no',
       });
       const result = buildEnvVars(env);
       expect(result.RANDOM_SECRET).toBeUndefined();
-      expect(result.MY_API_KEY).toBeUndefined();
+      expect(result.SOME_CONFIG_VALUE).toBeUndefined();
+    });
+
+    it('forwards secrets ending with _API_KEY (suffix match)', () => {
+      const env = createMockEnv({
+        MY_API_KEY: 'should-pass',
+      });
+      const result = buildEnvVars(env);
+      expect(result.MY_API_KEY).toBe('should-pass');
     });
 
     it('does not forward blocklisted secrets even with valid prefix', () => {
@@ -204,23 +215,112 @@ describe('buildEnvVars', () => {
       const result = buildEnvVars(env);
       expect(result.SKILL_OBJECT).toBeUndefined();
     });
+
+    it('forwards _TOKEN suffixed secrets', () => {
+      const env = createMockEnv({
+        DISCORD_TOKEN: 'discord-secret',
+        SOME_SERVICE_TOKEN: 'service-token',
+      });
+      const result = buildEnvVars(env);
+      expect(result.DISCORD_TOKEN).toBe('discord-secret');
+      expect(result.SOME_SERVICE_TOKEN).toBe('service-token');
+    });
+
+    it('forwards _API_KEY suffixed secrets', () => {
+      const env = createMockEnv({
+        LINEAR_API_KEY: 'linear-key',
+        NOTION_API_KEY: 'notion-key',
+      });
+      const result = buildEnvVars(env);
+      expect(result.LINEAR_API_KEY).toBe('linear-key');
+      expect(result.NOTION_API_KEY).toBe('notion-key');
+    });
+
+    it('forwards _API suffixed secrets', () => {
+      const env = createMockEnv({
+        SOME_SERVICE_API: 'service-api',
+      });
+      const result = buildEnvVars(env);
+      expect(result.SOME_SERVICE_API).toBe('service-api');
+    });
+
+    it('does not forward secrets that only contain TOKEN/API in the middle', () => {
+      const env = createMockEnv({
+        MY_TOKEN_THING: 'should-not-pass',
+        API_KEY_BACKUP: 'also-no',
+      });
+      const result = buildEnvVars(env);
+      // MY_TOKEN_THING doesn't end with _TOKEN or have approved prefix
+      expect(result.MY_TOKEN_THING).toBeUndefined();
+      // API_KEY_BACKUP starts with API_ so it SHOULD pass
+      expect(result.API_KEY_BACKUP).toBe('also-no');
+    });
   });
 
-  describe('isDynamicSecret', () => {
+  describe('hasDynamicPrefix', () => {
     it('returns true for SKILL_ prefix', () => {
-      expect(isDynamicSecret('SKILL_TEST')).toBe(true);
-      expect(isDynamicSecret('SKILL_')).toBe(true);
+      expect(hasDynamicPrefix('SKILL_TEST')).toBe(true);
+      expect(hasDynamicPrefix('SKILL_')).toBe(true);
     });
 
     it('returns true for API_ prefix', () => {
-      expect(isDynamicSecret('API_TEST')).toBe(true);
-      expect(isDynamicSecret('API_')).toBe(true);
+      expect(hasDynamicPrefix('API_TEST')).toBe(true);
+      expect(hasDynamicPrefix('API_')).toBe(true);
     });
 
     it('returns false for non-matching prefixes', () => {
+      expect(hasDynamicPrefix('RANDOM_KEY')).toBe(false);
+      expect(hasDynamicPrefix('skill_lowercase')).toBe(false);
+      expect(hasDynamicPrefix('MYSKILL_KEY')).toBe(false);
+    });
+  });
+
+  describe('hasDynamicSuffix', () => {
+    it('returns true for _TOKEN suffix', () => {
+      expect(hasDynamicSuffix('DISCORD_TOKEN')).toBe(true);
+      expect(hasDynamicSuffix('SLACK_BOT_TOKEN')).toBe(true);
+      expect(hasDynamicSuffix('_TOKEN')).toBe(true);
+    });
+
+    it('returns true for _API_KEY suffix', () => {
+      expect(hasDynamicSuffix('LINEAR_API_KEY')).toBe(true);
+      expect(hasDynamicSuffix('OPENAI_API_KEY')).toBe(true);
+    });
+
+    it('returns true for _API suffix', () => {
+      expect(hasDynamicSuffix('NOTION_API')).toBe(true);
+      expect(hasDynamicSuffix('SOME_SERVICE_API')).toBe(true);
+    });
+
+    it('returns false for non-matching suffixes', () => {
+      expect(hasDynamicSuffix('RANDOM_KEY')).toBe(false);
+      expect(hasDynamicSuffix('TOKEN_BACKUP')).toBe(false);
+      expect(hasDynamicSuffix('API_KEYS')).toBe(false);
+    });
+  });
+
+  describe('isDynamicSecret', () => {
+    it('returns true for prefix matches', () => {
+      expect(isDynamicSecret('SKILL_TEST')).toBe(true);
+      expect(isDynamicSecret('API_TEST')).toBe(true);
+    });
+
+    it('returns true for suffix matches', () => {
+      expect(isDynamicSecret('DISCORD_TOKEN')).toBe(true);
+      expect(isDynamicSecret('LINEAR_API_KEY')).toBe(true);
+      expect(isDynamicSecret('NOTION_API')).toBe(true);
+    });
+
+    it('returns true when both prefix and suffix match', () => {
+      expect(isDynamicSecret('SKILL_SERVICE_TOKEN')).toBe(true);
+      expect(isDynamicSecret('API_SOME_API_KEY')).toBe(true);
+    });
+
+    it('returns false for non-matching keys', () => {
       expect(isDynamicSecret('RANDOM_KEY')).toBe(false);
       expect(isDynamicSecret('skill_lowercase')).toBe(false);
       expect(isDynamicSecret('MYSKILL_KEY')).toBe(false);
+      expect(isDynamicSecret('TOKEN_BACKUP')).toBe(false);
     });
   });
 
@@ -242,6 +342,12 @@ describe('buildEnvVars', () => {
     it('has expected dynamic prefixes', () => {
       expect(DYNAMIC_SECRET_PREFIXES).toContain('SKILL_');
       expect(DYNAMIC_SECRET_PREFIXES).toContain('API_');
+    });
+
+    it('has expected dynamic suffixes', () => {
+      expect(DYNAMIC_SECRET_SUFFIXES).toContain('_TOKEN');
+      expect(DYNAMIC_SECRET_SUFFIXES).toContain('_API_KEY');
+      expect(DYNAMIC_SECRET_SUFFIXES).toContain('_API');
     });
 
     it('has expected blocklist patterns', () => {
