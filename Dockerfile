@@ -21,8 +21,8 @@ RUN ARCH="$(dpkg --print-architecture)" \
 RUN npm install -g pnpm
 
 # Install OpenClaw (gateway CLI)
-# Pin to specific version for reproducible builds
-RUN npm install -g openclaw@2.1 \
+# Uses @latest to match official install method and avoid version syntax issues
+RUN npm install -g openclaw@latest \
     && openclaw --version
 
 # Create moltbot directories
