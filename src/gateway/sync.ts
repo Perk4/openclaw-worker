@@ -63,7 +63,8 @@ export async function syncToR2(sandbox: Sandbox, env: MoltbotEnv): Promise<SyncR
   //   - /root/.openclaw/ → R2/openclaw/ (main config + custom skills)
   //   - /root/clawd/skills/ → R2/skills/ (workspace skills)
   //   - /root/.config/ → R2/dotconfig/ (tool credentials: gog, gh, etc.)
-  const syncCmd = `rsync -r --no-times --delete --exclude='*.lock' --exclude='*.log' --exclude='*.tmp' /root/.openclaw/ ${R2_MOUNT_PATH}/openclaw/ && rsync -r --no-times --delete /root/clawd/skills/ ${R2_MOUNT_PATH}/skills/ && mkdir -p ${R2_MOUNT_PATH}/dotconfig && rsync -r --no-times --delete /root/.config/ ${R2_MOUNT_PATH}/dotconfig/ && date -Iseconds > ${R2_MOUNT_PATH}/.last-sync`;
+  //   - /root/.ssh/ → R2/dotssh/ (SSH keys, if present)
+  const syncCmd = `rsync -r --no-times --delete --exclude='*.lock' --exclude='*.log' --exclude='*.tmp' /root/.openclaw/ ${R2_MOUNT_PATH}/openclaw/ && rsync -r --no-times --delete /root/clawd/skills/ ${R2_MOUNT_PATH}/skills/ && mkdir -p ${R2_MOUNT_PATH}/dotconfig && rsync -r --no-times --delete /root/.config/ ${R2_MOUNT_PATH}/dotconfig/ && if [ -d /root/.ssh ]; then mkdir -p ${R2_MOUNT_PATH}/dotssh && rsync -r --no-times --delete /root/.ssh/ ${R2_MOUNT_PATH}/dotssh/; fi && date -Iseconds > ${R2_MOUNT_PATH}/.last-sync`;
   
   try {
     const proc = await sandbox.startProcess(syncCmd);

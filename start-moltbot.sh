@@ -131,6 +131,21 @@ if [ -d "$BACKUP_DIR/dotconfig" ] && [ "$(ls -A $BACKUP_DIR/dotconfig 2>/dev/nul
     fi
 fi
 
+# Restore ~/.ssh/ (SSH keys) from R2 backup
+DOTSSH_DIR="/root/.ssh"
+if [ -d "$BACKUP_DIR/dotssh" ] && [ "$(ls -A $BACKUP_DIR/dotssh 2>/dev/null)" ]; then
+    if should_restore_from_r2; then
+        echo "Restoring SSH keys from $BACKUP_DIR/dotssh..."
+        mkdir -p "$DOTSSH_DIR"
+        cp -a "$BACKUP_DIR/dotssh/." "$DOTSSH_DIR/"
+        # Fix SSH key permissions (required for SSH to work)
+        chmod 700 "$DOTSSH_DIR"
+        chmod 600 "$DOTSSH_DIR"/* 2>/dev/null || true
+        chmod 644 "$DOTSSH_DIR"/*.pub 2>/dev/null || true
+        echo "Restored ~/.ssh from R2 backup"
+    fi
+fi
+
 # If config file still doesn't exist, create from template
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "No existing config found, initializing from template..."
