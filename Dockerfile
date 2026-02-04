@@ -22,7 +22,7 @@ RUN npm install -g pnpm
 
 # Install OpenClaw (gateway CLI)
 # Pin to specific version for reproducible builds
-RUN npm install -g openclaw@2026.1.29 \
+RUN npm install -g openclaw@2.1 \
     && openclaw --version
 
 # Create moltbot directories
