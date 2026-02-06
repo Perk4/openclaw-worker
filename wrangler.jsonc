@@ -1,0 +1,107 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "openclaw-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-05-06",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+  },
+  // Static assets for admin UI (built by vite)
+  "assets": {
+    "directory": "./dist/client",
+    "not_found_handling": "single-page-application",
+    "html_handling": "auto-trailing-slash",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+  },
+  // Allow importing HTML files as text modules and PNG files as binary
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.html"],
+      "fallthrough": false,
+    },
+    {
+      "type": "Data",
+      "globs": ["**/*.png"],
+      "fallthrough": false,
+    },
+  ],
+  // Build command for vite
+  "build": {
+    "command": "npm run build",
+  },
+  // Container configuration for the Moltbot sandbox
+  "containers": [
+    {
+      "class_name": "Sandbox",
+      "image": "./Dockerfile",
+      "instance_type": "standard-4",
+      "max_instances": 1,
+    },
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "Sandbox",
+        "name": "Sandbox",
+      },
+      {
+        "class_name": "PlaywrightMCP",
+        "name": "MCP_OBJECT",
+      },
+    ],
+  },
+  "migrations": [
+    {
+      "new_sqlite_classes": ["Sandbox"],
+      "tag": "v1",
+    },
+    {
+      "new_sqlite_classes": ["PlaywrightMCP"],
+      "tag": "v2",
+    },
+  ],
+  // KV namespace for browser auth state persistence
+  "kv_namespaces": [
+    {
+      "binding": "BROWSER_KV",
+      "id": "c82eff0170a24a53ae03b21dd768f52e",
+    },
+  ],
+  // Workers AI binding for Stagehand
+  "ai": {
+    "binding": "AI",
+  },
+  // R2 bucket for persistent storage (moltbot data, conversations, etc.)
+  "r2_buckets": [
+    {
+      "binding": "MOLTBOT_BUCKET",
+      "bucket_name": "openclaw-data",
+    },
+  ],
+  // Cron trigger to sync moltbot data to R2 every 5 minutes
+  "triggers": {
+    "crons": ["*/5 * * * *"],
+  },
+  // Browser Rendering binding for CDP shim
+  "browser": {
+    "binding": "BROWSER",
+  },
+  // Module alias to ensure Stagehand uses Cloudflare's Playwright fork
+  "alias": {
+    "playwright": "@cloudflare/playwright",
+  },
+  // Non-secret env vars (keep in sync with Dashboard Variables; secrets use Dashboard or .dev.vars)
+  "vars": {
+    "DEV_MODE": "false",
+    "DEBUG_ROUTES": "true"
+  },
+  // Secrets: set in Dashboard (Variables and Secrets) or `wrangler secret put <NAME>`.
+  // For local dev, copy .dev.vars.example to .dev.vars and use the same names:
+  // ANTHROPIC_API_KEY, CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD,
+  // TELEGRAM_BOT_TOKEN, DISCORD_BOT_TOKEN, SLACK_BOT_TOKEN, SLACK_APP_TOKEN,
+  // MOLTBOT_GATEWAY_TOKEN, CDP_SECRET, WORKER_URL,
+  // R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, CF_ACCOUNT_ID
+}
