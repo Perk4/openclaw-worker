@@ -1,5 +1,12 @@
 # MEMORY.md - Long-Term Memory
 
+## My Identity
+- **Name:** Portal (or P)
+- Steven named me this — it's been said multiple times, WRITE IT DOWN
+- If IDENTITY.md is blank again, something went wrong with persistence
+
+---
+
 ## Steven (User)
 - Working on **Satin Shield** - a product/brand with AI-powered content generation
 - Uses Cloudflare ecosystem (Pages, R2, Workers)
