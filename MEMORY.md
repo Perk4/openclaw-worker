@@ -44,21 +44,31 @@ AI-powered video content generation pipeline for UGC-style marketing videos.
 3. EducationalExplainer - Educational content
 4. TrendResponse - Quick trend response videos
 
-**Pipeline Status (as of 2026-02-06):**
+**Pipeline Status (as of 2025-02-07):**
 - ✅ Remotion rendering with Chrome headless
 - ✅ Claude API script generation (authentic UGC voice)
+- ✅ OpenAI TTS voiceover generation
+- ✅ Gemini product image generation with reference image support
+- ✅ Hedra Character-3 avatar video generation
 - ✅ Animated captions, brand watermark, AI disclosure
 - ✅ UI gallery deployed to Pages
 - ✅ Videos hosted on R2
-- ⏳ Hedra/D-ID avatar integration (needs API key)
-- ⏳ Audio/voiceover integration
-- ⏳ Worker API deployment
-- ⏳ Dashboard controls (trigger renders, job status)
+- ✅ Worker API deployed
+- ✅ Lightbox image viewer with keep/delete/regenerate
+- ⏳ Avatar tab testing (next session)
+- ⏳ Multiple reference images for product shots
 
 **Pages Deploy Config:**
 - Root directory: `ui`
 - Build command: `npm install && npm run build`
 - Output directory: `dist`
+
+**Dashboard Tabs:**
+1. ✨ Scripts - Generate UGC scripts + TTS voiceover
+2. 📸 Products - AI product image generation (Gemini) with lightbox viewer
+3. 🎭 Avatar - Talking head videos (Hedra Character-3) - needs testing
+4. 📝 Library - All generated scripts with audio playback
+5. 📺 Videos - Video gallery from R2
 
 **10AM Daily Report:**
 - Cron job sends daily status email to steven.esp574@gmail.com
